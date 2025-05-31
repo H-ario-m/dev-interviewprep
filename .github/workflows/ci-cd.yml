@@ -10,12 +10,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
+        cache: 'pip'
     
     - name: Install dependencies
       run: |
@@ -26,8 +28,8 @@ jobs:
       run: |
         python -m pytest --cov=./ --cov-report=xml
     
-    - name: Upload coverage
-      uses: actions/upload-artifact@v2
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
       with:
         name: coverage-report
         path: coverage.xml
@@ -37,24 +39,27 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v3
     
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0
+      uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         service_account_key: ${{ secrets.GCP_SA_KEY }}
     
+    - name: Authenticate with Docker
+      run: gcloud auth configure-docker --quiet
+    
     - name: Build and push Docker image
       run: |
-        gcloud auth configure-docker
         docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} .
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}
     
     - name: Deploy to VM
       run: |
-        gcloud compute ssh flask-app-server --command="
-          docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} && 
-          docker stop flask-app || true && 
-          docker rm flask-app || true && 
-          docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}"
+        gcloud compute ssh flask-app-server --zone=us-central1-a --quiet --command="
+          sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} &&
+          sudo docker stop flask-app || true &&
+          sudo docker rm flask-app || true &&
+          sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}"
