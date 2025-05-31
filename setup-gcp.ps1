@@ -34,16 +34,22 @@ gcloud projects add-iam-policy-binding $PROJECT_ID `
     --member="serviceAccount:$SA_EMAIL" `
     --role="roles/containerregistry.ServiceAgent"
 
-Write-Host "Enabling required APIs..."
-gcloud services enable containerregistry.googleapis.com --project=$PROJECT_ID
-gcloud services enable artifactregistry.googleapis.com --project=$PROJECT_ID
-
 Write-Host "Granting additional permissions..."
 gcloud projects add-iam-policy-binding $PROJECT_ID `
     --member="serviceAccount:$SA_EMAIL" `
     --role="roles/artifactregistry.admin"
 
-gcloud services enable containerregistry.googleapis.com --project=$PROJECT_ID
+# Add Service Usage Admin role
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+    --member="serviceAccount:$SA_EMAIL" `
+    --role="roles/serviceusage.serviceUsageAdmin"
+
+# Enable APIs (run as owner)
+Write-Host "Enabling required APIs..."
+gcloud auth login
+gcloud config set project $PROJECT_ID
+gcloud services enable containerregistry.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
 
 Write-Host "Creating service account key..."
 gcloud iam service-accounts keys create .\key.json --iam-account=$SA_EMAIL

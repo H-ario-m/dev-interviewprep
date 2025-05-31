@@ -27,11 +27,13 @@ jobs:
       uses: google-github-actions/auth@v1
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        service_account: 'github-actions@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
         
     - name: Setup Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
+        install_components: 'gke-gcloud-auth-plugin'
         
     - name: Enable APIs
       run: |
@@ -40,7 +42,7 @@ jobs:
         
     - name: Configure Docker
       run: |
-        gcloud auth configure-docker gcr.io
+        gcloud auth configure-docker gcr.io --quiet
         
     - name: Build & Push Image
       run: |
@@ -51,8 +53,9 @@ jobs:
       run: |
         gcloud compute ssh flask-app-server \
           --zone=us-central1-a \
+          --quiet \
           --command="
-            sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest && \
+            sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} && \
             sudo docker stop flask-app || true && \
             sudo docker rm flask-app || true && \
-            sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest"
+            sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}"
