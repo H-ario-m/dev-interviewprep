@@ -34,19 +34,20 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         
     - name: Configure Docker
-      run: gcloud auth configure-docker gcr.io --quiet
+      run: |
+        gcloud auth configure-docker
         
     - name: Build & Push Image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest .
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} .
+        gcloud docker -- push gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}
         
     - name: Deploy to VM
       run: |
         gcloud compute ssh flask-app-server \
           --zone=us-central1-a \
           --command="
-            sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest && \
+            sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} && \
             sudo docker stop flask-app || true && \
             sudo docker rm flask-app || true && \
-            sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:latest"
+            sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}"
