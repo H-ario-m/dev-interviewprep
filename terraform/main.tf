@@ -28,6 +28,13 @@ resource "google_compute_instance" "flask_app" {
     access_config {}
   }
 
+  metadata = {
+    ssh-keys = <<-EOT
+      anshumanojha91:ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP900t6LBKAW47w9aU6WpmsnUwWMnLt4/kG93riIF+OziN8RTUz2I1gQyNNoeD+WTWNViZFzKdIVmZV48HmiXh4= google-ssh {"userName":"anshumanojha91@gmail.com","expireOn":"2025-05-31T09:34:05+0000"}
+      anshumanojha91:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDlmm8h3SmgcTAdrsVRcPm+ZSjjoZSQ1aA+w4MzgIoybW5YzW1tBtxSpI+jBDwzsBriU3ffyF+1p+qHY4PejZ1ApF7DqAy+XFFeU0THtNCsp6c98sAz7/CbCPejlTesOvLe0nEhK/1Ht6FBbcp73YVDihSOHLOLaxXz54vZUk53HxaQs8gs4rOzTB8hGa5HCxp8G+AYMgM9wB3020dHyVPL/ZEnrZ1jQNDImbEkfD28gr+VKCA7Yx/+ltQiaklKN99GBILEPQx29GaSMiJsRFOBqanEARaF1/8BWODnp/cJTArIAq2tMDffAv1PHS925FtaGLOnzBiQApfz4ok71i2v google-ssh {"userName":"anshumanojha91@gmail.com","expireOn":"2025-05-31T09:34:22+0000"}
+    EOT
+  }
+
   metadata_startup_script = <<-EOF
     #!/bin/bash
     set -e  # Exit on any error
@@ -94,7 +101,7 @@ resource "google_compute_instance" "flask_app" {
   tags = ["http-server", "https-server"]
 
   service_account {
-    email  = google_service_account.flask_app.email
+    email  = "github-actions@${var.project_id}.iam.gserviceaccount.com"
     scopes = ["cloud-platform"]
   }
 }

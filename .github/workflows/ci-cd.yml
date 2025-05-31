@@ -39,27 +39,31 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+    - name: Google Auth
+      id: auth
+      uses: google-github-actions/auth@v1
       with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-    
-    - name: Authenticate with Docker
-      run: gcloud auth configure-docker --quiet
-    
-    - name: Build and push Docker image
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      
+    - name: Configure Docker
+      run: gcloud auth configure-docker gcr.io --quiet
+        
+    - name: Build & Push Image
       run: |
         docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} .
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}
-    
+        
     - name: Deploy to VM
       run: |
-        gcloud compute ssh flask-app-server --zone=us-central1-a --quiet --command="
-          sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} &&
-          sudo docker stop flask-app || true &&
-          sudo docker rm flask-app || true &&
-          sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}"
+        gcloud compute ssh flask-app-server \
+          --zone=us-central1-a \
+          --command="
+            sudo docker pull gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }} && \
+            sudo docker stop flask-app || true && \
+            sudo docker rm flask-app || true && \
+            sudo docker run -d --name flask-app -p 5000:5000 gcr.io/${{ secrets.GCP_PROJECT_ID }}/flask-app:${{ github.sha }}"

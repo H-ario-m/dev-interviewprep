@@ -1,24 +1,7 @@
-variable "aws_region" {
-  description = "AWS region"
+variable "ssh_username" {
+  description = "SSH username for the instance"
   type        = string
-  default     = "us-west-2"
-}
-
-variable "ami_id" {
-  description = "AMI ID for Ubuntu 20.04 LTS"
-  type        = string
-  default     = "ami-03f65b8614a860c29"  # Ubuntu 20.04 LTS in us-west-2
-}
-
-variable "key_name" {
-  description = "Name of the SSH key pair"
-  type        = string
-}
-
-variable "ssh_user" {
-  description = "SSH user for the instance"
-  type        = string
-  default     = "ubuntu"
+  default     = "anshumanojha91"
 }
 
 variable "project_id" {
