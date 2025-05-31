@@ -101,8 +101,12 @@ resource "google_compute_instance" "flask_app" {
   tags = ["http-server", "https-server"]
 
   service_account {
-    email  = "github-actions@${var.project_id}.iam.gserviceaccount.com"
-    scopes = ["cloud-platform"]
+    email  = google_service_account.flask_app.email
+    scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+      "https://www.googleapis.com/auth/compute",
+      "https://www.googleapis.com/auth/devstorage.read_write"
+    ]
   }
 }
 
